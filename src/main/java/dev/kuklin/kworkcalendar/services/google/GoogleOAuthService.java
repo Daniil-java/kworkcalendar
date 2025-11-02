@@ -7,10 +7,12 @@ import dev.kuklin.kworkcalendar.telegram.handlers.AssistantCalendarChooseUpdateH
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ClassPathResource;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @Slf4j
 public class GoogleOAuthService {
 
+    private final Resource badRequestPage = new ClassPathResource("static/error.html");
     private final GoogleOAuthProperties props;
     private final LinkStateService linkState;
     private final GoogleOAuthHttpClient google;
@@ -67,7 +70,10 @@ public class GoogleOAuthService {
 //            return authUrl;
         } catch (IllegalStateException ex) {
             log.warn("Invalid link {}: {}", linkId, ex.getMessage());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link is invalid or expired");
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link is invalid or expired");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                 .contentType(MediaType.TEXT_HTML)
+                                 .body(badRequestPage);
         }
 
     }
