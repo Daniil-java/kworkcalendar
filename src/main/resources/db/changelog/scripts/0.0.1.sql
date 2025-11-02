@@ -82,7 +82,7 @@ CREATE TABLE user_google_calendar_cache (
 );
 
 CREATE TABLE ai_message_log (
-                                id BIGINT PRIMARY KEY,
+                                id BIGSERIAL PRIMARY KEY,
                                 request TEXT,
                                 response TEXT
 );
