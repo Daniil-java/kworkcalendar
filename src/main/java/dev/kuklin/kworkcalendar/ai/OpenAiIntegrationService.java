@@ -19,12 +19,11 @@ public class OpenAiIntegrationService {
         this.openAiFeignClient = openAiFeignClient;
     }
 
-    public String fetchResponse(String content, String aiKey) {
+    public String fetchResponse(String aiKey, String content) {
         OpenAiChatCompletionRequest request =
                 OpenAiChatCompletionRequest.makeDefaultRequest(content);
 
         String key = "Bearer " + aiKey;
-        log.info(key);
         OpenAiChatCompletionResponse response =
                 openAiFeignClient.generate(key, request);
 
