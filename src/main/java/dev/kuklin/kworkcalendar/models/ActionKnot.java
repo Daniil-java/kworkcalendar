@@ -12,7 +12,8 @@ public class ActionKnot {
     public enum Action {
         EVENT_DELETE,
         EVENT_ADD,
-        EVENT_EDIT
+        EVENT_EDIT,
+        ERROR
         ;
     }
 }

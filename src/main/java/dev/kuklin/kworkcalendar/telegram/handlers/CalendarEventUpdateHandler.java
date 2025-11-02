@@ -96,6 +96,10 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
 
             String tz = calendarService.getTimeZoneInCalendarOrNull(calendarContext);
             ActionKnot actionKnot = actionKnotService.getActionKnotOrNull(request, tz);
+            if (actionKnot.getAction().equals(ActionKnot.Action.ERROR)) {
+                assistantTelegramBot.sendReturnedMessage(chatId, "Кажется это сообщение было случайным");
+                return;
+            }
 
             if (actionKnot.getAction() == ActionKnot.Action.EVENT_ADD) {
                 CalendarEventAiResponse calendarRequest = actionKnot.getCalendarEventAiResponse();
