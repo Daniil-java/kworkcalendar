@@ -57,31 +57,33 @@ public class CalendarService {
     private final JacksonFactory jsonFactory = JacksonFactory.getDefaultInstance();
     private final GoogleComponents googleComponents;
 
-    private static final String AI_REMOVE_REQUEST =
-            """
-                    Проанализируй список событий и строку поиска.
-                                        
-                    Список событий:
-                    "%s"
-                                        
-                    Строка поиска:
-                    "%s"
-                                        
-                    Правила:
-                    1. Верни только JSON‑массив строк без лишнего текста, обрамлений или комментариев.
-                    2. Нужно найти все события, у которых summary или description или дата (или их комбинация) максимально совпадают со строкой поиска.
-                    3. Ответ должен быть в формате:
-                    [
-                      "eventId1",
-                      "eventId2"
-                    ]
-                    4. Если совпадений нет — верни пустой массив [].
-                                       
-                    ВЕРНИ ТОЛЬКО JSON, БЕЗ ЛИШНЕГО ТЕКСТА, КАВЫЧЕК, ОБРАМЛЕНИЙ ИЛИ КОММЕНТАРИЕВ.!!!
+    private static final String AI_REMOVE_REQUEST = """
+            Проанализируй список событий из Google Календаря и запрос пользователя, чтобы определить, какие события нужно удалить.
+
+            Список событий:
+            %s
+
+            Запрос пользователя:
+            %s
+
+            Инструкция:
+            1. Сравни запрос с каждым событием по следующим полям:
+               - summary (название)
+               - description (описание)
+               - дата и время (start и end)
+            2. Учитывай смысловое совпадение. Пользователь может описывать событие другими словами, указывать только часть названия или дату.
+            3. Если в запросе пользователь говорит «все события», «удали все на сегодня», «удали встречи за завтра» — выбери все подходящие по этим параметрам.
+            4. Если упомянуто несколько названий, дат или временных периодов — выбери все совпадающие события.
+            5. Ответ должен быть в строгом формате JSON‑массива строк с **eventId**:
+            [
+              "eventId1",
+              "eventId2"
+            ]
+            6. Если совпадений нет — верни пустой массив: []
+             ВЕРНИ ТОЛЬКО JSON, БЕЗ ЛИШНЕГО ТЕКСТА, КАВЫЧЕК, ОБРАМЛЕНИЙ ИЛИ КОММЕНТАРИЕВ.!!!
                     Запрещено добавлять Markdown, кодовые блоки (```), подсветку json, комментарии, пояснения, преамбулы.
                      
-                    """;
-
+            """;
     private static final String AI_EDIT_REQUEST = """
             Проанализируй список событий Google Календаря и запрос пользователя, чтобы определить, какое событие он хочет изменить.
 
@@ -104,7 +106,7 @@ public class CalendarService {
             ⚠️ Формат ответа:
             — Верни **только значение eventId** без кавычек, без комментариев, без кода, без Markdown.  
             Если нет совпадений — верни пустую строку "".
-            
+                        
             ВЕРНИ ТОЛЬКО СТРОКУ, БЕЗ ЛИШНЕГО ТЕКСТА, КАВЫЧЕК, ОБРАМЛЕНИЙ ИЛИ КОММЕНТАРИЕВ.!!!
                     Запрещено добавлять Markdown, кодовые блоки (```), подсветку json, комментарии, пояснения, преамбулы.
             """;
@@ -211,12 +213,13 @@ public class CalendarService {
 
         List<Event> yearEvents = getNextYearEvents(telegramId);
 
+        CalendarEventAiResponse calendarResponse = actionKnot.getCalendarEventAiResponse();
         String request = String.format(
                 AI_REMOVE_REQUEST,
                 CalendarServiceUtils.getRequestByEventsList(yearEvents),
-                actionKnot.getCalendarEventAiResponse().getSummary()
-                        + ". Описание: " + actionKnot.getCalendarEventAiResponse().getDescription()
-                        + ". Дата: " + actionKnot.getCalendarEventAiResponse().getStart()
+                "Название: " + calendarResponse.getSummary()
+                        + ". Описание: " + calendarResponse.getDescription()
+                        + ". Дата: " + calendarResponse.getStart()
         );
         String aiResponse = openAiIntegrationService.fetchResponse(
                 components.getAiKey(), request);
