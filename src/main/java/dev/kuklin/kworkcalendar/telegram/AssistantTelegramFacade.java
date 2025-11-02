@@ -19,15 +19,20 @@ public class AssistantTelegramFacade extends TelegramFacade {
     private TelegramUserService telegramUserService;
     @Override
     public void handleUpdate(Update update) {
-        if (!update.hasCallbackQuery() && !update.hasMessage()) return;
-        User user = update.getMessage() != null ?
-                update.getMessage().getFrom() :
-                update.getCallbackQuery().getFrom();
+        try {
+            if (!update.hasCallbackQuery() && !update.hasMessage()) return;
+            User user = update.getMessage() != null ?
+                    update.getMessage().getFrom() :
+                    update.getCallbackQuery().getFrom();
 
-        TelegramUser telegramUser = telegramUserService
-                .createOrGetUserByTelegram(user);
+            TelegramUser telegramUser = telegramUserService
+                    .createOrGetUserByTelegram(user);
 
-        processInputUpdate(update).handle(update, telegramUser);
+            log.info("New message {}", update);
+            processInputUpdate(update).handle(update, telegramUser);
+        } catch (Exception ex) {
+            log.error("Error processing message", ex);
+        }
     }
 
     public UpdateHandler processInputUpdate(Update update) {
