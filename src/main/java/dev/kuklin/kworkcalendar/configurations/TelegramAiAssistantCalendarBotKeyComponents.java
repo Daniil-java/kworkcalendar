@@ -1,0 +1,24 @@
+package dev.kuklin.kworkcalendar.configurations;
+
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Getter
+@Component
+public class TelegramAiAssistantCalendarBotKeyComponents {
+    private final String key;
+    private final String aiKey;
+
+    @Autowired
+    public TelegramAiAssistantCalendarBotKeyComponents(Environment environment) {
+//        this.key = environment.getProperty("CALEN_BOT_TOKEN");
+        this.key = "8436872808:AAGz3cVUiZ5Oz70nHQgyuW4Zke3t3hREnFc";
+        log.info("Generation key initiated (CALEN_BOT_TOKEN)");
+        this.aiKey = environment.getProperty("GENERATION_TOKEN");
+        log.info("Ai key initiated (CALEN_BOT_TOKEN)");
+    }
+}
