@@ -55,7 +55,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
     private static final String TEXT_TO_LONG_ERROR_MESSAGE =
             "Ваше сообщение слишком длинное!";
     private static final String EVENT_NOT_FOUND_ERROR_MESSAGE =
-            "Не получилось найти собитие";
+            "Не получилось найти событие";
     private static final String GOOGLE_AUTH_ERROR_MESSAGE =
             "Вам нужно пройти авторизацию заново!";
     private static final String GOOGLE_OTHER_ERROR_MESSAGE =

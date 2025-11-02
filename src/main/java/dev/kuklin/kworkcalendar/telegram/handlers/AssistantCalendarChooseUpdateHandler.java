@@ -78,11 +78,7 @@ public class AssistantCalendarChooseUpdateHandler implements UpdateHandler {
                     .listUserCalendarsOrNull(telegramUser.getTelegramId());
 
             log.info("calendarList.size(): " + calendarList.size());
-            StringBuilder sb = new StringBuilder();
-            for (GoogleCacheableCalendar calendar : calendarList) {
-                sb.append(calendar.getSummary()).append("\n");
-            }
-            telegramBot.sendReturnedMessage(chatId, sb.toString(), getCalendarListKeyboard(calendarList), null);
+            telegramBot.sendReturnedMessage(chatId, "\uD83D\uDCC5 Доступные календари", getCalendarListKeyboard(calendarList), null);
         } catch (TokenRefreshException e) {
             if (e.getReason().equals(TokenRefreshException.Reason.INVALID_GRANT)) {
                 telegramBot.sendReturnedMessage(chatId, GOOGLE_AUTH_ERROR_MESSAGE);
