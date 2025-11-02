@@ -82,25 +82,33 @@ public class CalendarService {
                      
                     """;
 
-    private static final String AI_EDIT_REQUEST =
-            """
-                    Проанализируй список событий и строку поиска.
-                                        
-                    Список событий:
-                    "%s"
-                                        
-                    Строка поиска:
-                    "%s"
-                                        
-                    Правила:
-                    1. Верни только строку с eventId без лишнего текста, обрамлений или комментариев.
-                    2. Нужно найти только одно событие из всего списка, подходящее под строку поиска.
-                    3. Если совпадений нет — верни пустую строку "".
-                                       
-                    ВЕРНИ ТОЛЬКО СТРОКУ, БЕЗ ЛИШНЕГО ТЕКСТА, КАВЫЧЕК, ОБРАМЛЕНИЙ ИЛИ КОММЕНТАРИЕВ.!!!
+    private static final String AI_EDIT_REQUEST = """
+            Проанализируй список событий Google Календаря и запрос пользователя, чтобы определить, какое событие он хочет изменить.
+
+            Список событий:
+            %s
+
+            Запрос пользователя:
+            %s
+
+            Инструкция по поиску:
+            1. Сравни название, описание, дату, время и смысловую близость текста запроса с каждым событием.
+            2. Учитывай, что пользователь может:
+               - Использовать синонимы ("встреча" ↔️ "собрание"),
+               - Не упоминать точное время или дату,
+               - Упомянуть часть названия.
+            3. Если событие наиболее логично соответствует запросу — **выбери только его**.
+            4. Если несколько подходят одинаково — выбери **то, у которого дата ближайшая к сегодняшней**.
+            5. Если ничего не подходит — верни пустую строку "".
+
+            ⚠️ Формат ответа:
+            — Верни **только значение eventId** без кавычек, без комментариев, без кода, без Markdown.  
+            Если нет совпадений — верни пустую строку "".
+            
+            ВЕРНИ ТОЛЬКО СТРОКУ, БЕЗ ЛИШНЕГО ТЕКСТА, КАВЫЧЕК, ОБРАМЛЕНИЙ ИЛИ КОММЕНТАРИЕВ.!!!
                     Запрещено добавлять Markdown, кодовые блоки (```), подсветку json, комментарии, пояснения, преамбулы.
-                     
-                    """;
+            """;
+
 
     public Event addEventInCalendar(CalendarContext calendarContext,
                                     CalendarEventAiResponse request, Long telegramId)
@@ -213,7 +221,8 @@ public class CalendarService {
         String aiResponse = openAiIntegrationService.fetchResponse(
                 components.getAiKey(), request);
         aiMessageLogService.saveLog(request, aiResponse);
-        List<String> eventIds = objectMapper.readValue(aiResponse, new TypeReference<List<String>>() {});
+        List<String> eventIds = objectMapper.readValue(aiResponse, new TypeReference<List<String>>() {
+        });
 
         // Используем Set для быстрого поиска
         Set<String> idsСoincided = new HashSet<>(eventIds);
@@ -225,6 +234,7 @@ public class CalendarService {
 
     /**
      * Провеяем уведомляли ли мы пользователя, об определенной задаче
+     *
      * @return String eventId возвращает идентификатор мероприятия
      * @return null - если у пользователя не установлен календарь
      * @throws TokenRefreshException - авторизация просрочена или ошибка на стороне гугла
@@ -252,6 +262,7 @@ public class CalendarService {
 
     /**
      * Провеяем уведомляли ли мы пользователя, об определенной задаче
+     *
      * @return String calendarId - если у пользователя есть календарь
      * @return null - если у пользователя не установлен календарь
      */
@@ -358,7 +369,7 @@ public class CalendarService {
         // Конец окна: ровно через год
         ZonedDateTime end = start.plusYears(1);
         int tzShiftStart = start.getOffset().getTotalSeconds() / 60;
-        int tzShiftEnd   = end.getOffset().getTotalSeconds() / 60;
+        int tzShiftEnd = end.getOffset().getTotalSeconds() / 60;
         DateTime timeMin = new DateTime(start.toInstant().toEpochMilli(), tzShiftStart);
         DateTime timeMax = new DateTime(end.toInstant().toEpochMilli(), tzShiftEnd);
 
