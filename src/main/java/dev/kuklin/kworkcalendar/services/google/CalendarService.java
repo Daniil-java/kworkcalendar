@@ -154,8 +154,12 @@ public class CalendarService {
                 .get(calendarId, targetId)
                 .execute();
 
+        log.info("TARGET: " + target.getSummary() + "\n" + target.getDescription() + "\n" + target.getStart() + " \n" + target.getEnd());
+
         String tz = getTimeZoneInCalendarOrNull(calendarContext);
         Event patch = CalendarServiceUtils.buildPatchFromRequest(actionKnot.getCalendarEventAiResponse(), tz);
+        log.info("PATCH: " + patch.getSummary() + "\n" + patch.getDescription() + "\n" + patch.getStart() + " \n" + patch.getEnd());
+
 
         Event updated = calendar.events()
                 .patch(calendarId, target.getId(), patch)

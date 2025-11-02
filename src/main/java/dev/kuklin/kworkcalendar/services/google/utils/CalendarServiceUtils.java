@@ -43,11 +43,18 @@ public class CalendarServiceUtils {
             ZonedDateTime end   = parseWithZone(req.getEnd(),   zoneId).withZoneSameInstant(zoneId);
 
             EventDateTime startDT = new EventDateTime()
-                    .setDateTime(new DateTime(start.toInstant().toEpochMilli(), start.getOffset().getTotalSeconds() / 60))
+                    .setDateTime(new DateTime(start.toInstant().toEpochMilli()))
                     .setTimeZone(timeZone);
+
             EventDateTime endDT = new EventDateTime()
-                    .setDateTime(new DateTime(end.toInstant().toEpochMilli(), end.getOffset().getTotalSeconds() / 60))
+                    .setDateTime(new DateTime(end.toInstant().toEpochMilli()))
                     .setTimeZone(timeZone);
+//            EventDateTime startDT = new EventDateTime()
+//                    .setDateTime(new DateTime(start.toInstant().toEpochMilli(), start.getOffset().getTotalSeconds() / 60))
+//                    .setTimeZone(timeZone);
+//            EventDateTime endDT = new EventDateTime()
+//                    .setDateTime(new DateTime(end.toInstant().toEpochMilli(), end.getOffset().getTotalSeconds() / 60))
+//                    .setTimeZone(timeZone);
 
             patch.setStart(startDT);
             patch.setEnd(endDT);
