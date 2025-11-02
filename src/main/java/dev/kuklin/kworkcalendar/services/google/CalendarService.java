@@ -143,8 +143,18 @@ public class CalendarService {
                 .execute();
     }
 
+    public Event getEventById(CalendarContext calendarContext, String targetId) throws IOException {
+        Calendar calendar = calendarContext.getCalendar();
+        String calendarId = calendarContext.getCalendarId();
+
+        return calendar
+                .events()
+                .get(calendarId, targetId)
+                .execute();
+    }
+
     public Event editEventInCalendar(CalendarContext calendarContext,
-                                     String targetId, ActionKnot actionKnot, Long telegramId)
+                                     String targetId, ActionKnot actionKnot)
             throws IOException, TokenRefreshException {
         Calendar calendar = calendarContext.getCalendar();
         String calendarId = calendarContext.getCalendarId();

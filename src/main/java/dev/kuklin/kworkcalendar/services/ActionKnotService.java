@@ -2,6 +2,7 @@ package dev.kuklin.kworkcalendar.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.services.calendar.model.Event;
 import dev.kuklin.kworkcalendar.ai.OpenAiIntegrationService;
 import dev.kuklin.kworkcalendar.configurations.TelegramAiAssistantCalendarBotKeyComponents;
 import dev.kuklin.kworkcalendar.models.ActionKnot;
@@ -58,10 +59,12 @@ public class ActionKnotService {
 
     private static final String AI_EDIT_REQUEST =
             """
-                    Проанализируй следующий текст и извлеки данные для события календаря.
+                    Проанализируй следующий текст и извлеки данные для события календаря. Это событие редактирования, когда пользователь меняет свое старое мероприятие на новое. Я отправлю тебе также старое событие, чтобы ты мог в нем ориентироваться. Например если пользователь попросить перенсти на час вперед и тд.
                                         
                     Текст: "%s."
-                                        
+                    
+                    Старое событие: "%s"
+                    
                     Правила:
                     1. Верни только JSON-объект без лишнего текста, обрамлений или комментариев.
                     2. Структура ответа:
@@ -182,10 +185,10 @@ public class ActionKnotService {
         }
     }
 
-    public ActionKnot getActionKnotForEditMessageOrNull(String message) {
+    public ActionKnot getActionKnotForEditMessageOrNull(String message, Event oldEvent) {
         String aiResponse = aiService.fetchResponse(
                 components.getAiKey(),
-                String.format(AI_EDIT_REQUEST, message, LocalDate.now()));
+                String.format(AI_EDIT_REQUEST, message, getOldEventString(oldEvent), LocalDate.now()));
         aiResponse = extractResponse(aiResponse);
         aiMessageLogService.saveLog(message, aiResponse);
         try {
@@ -194,6 +197,16 @@ public class ActionKnotService {
             log.error("Не получилось распознать сообщение", e);
             return null;
         }
+    }
+
+    private String getOldEventString(Event event) {
+        StringBuilder sb = new StringBuilder();
+        sb
+                .append("Название: ").append(event.getSummary()).append("\n")
+                .append("Описание: ").append(event.getDescription()).append("\n")
+                .append("Начало: ").append(event.getStart()).append("\n")
+                .append("Конец: ").append(event.getEnd());
+        return sb.toString();
     }
 
     private String extractResponse(String response) {

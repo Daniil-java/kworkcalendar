@@ -140,9 +140,9 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
                     return;
                 }
 
-                ActionKnot newActionKnot = actionKnotService.getActionKnotForEditMessageOrNull(request);
-
-                Event event = calendarService.editEventInCalendar(calendarContext, eventId, newActionKnot, telegramUser.getTelegramId());
+                Event oldEvent = calendarService.getEventById(calendarContext, eventId);
+                ActionKnot newActionKnot = actionKnotService.getActionKnotForEditMessageOrNull(request, oldEvent);
+                Event event = calendarService.editEventInCalendar(calendarContext, eventId, newActionKnot);
                 sendEventMessage(chatId, event);
             }
         } catch (IOException e) {
