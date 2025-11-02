@@ -23,8 +23,10 @@ public class OpenAiIntegrationService {
         OpenAiChatCompletionRequest request =
                 OpenAiChatCompletionRequest.makeDefaultRequest(content);
 
+        String key = "Bearer " + aiKey;
+        log.info(key);
         OpenAiChatCompletionResponse response =
-                openAiFeignClient.generate("Bearer " + aiKey, request);
+                openAiFeignClient.generate(key, request);
 
         return response.getChoices().get(0).getMessage().getContent();
     }
