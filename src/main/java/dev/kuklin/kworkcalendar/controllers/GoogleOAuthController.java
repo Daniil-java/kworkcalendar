@@ -23,7 +23,7 @@ public class GoogleOAuthController {
      *   https://<host>/auth/google/start?linkId=<UUID>
      */
     @GetMapping("/start")
-    public ResponseEntity<?> start(@RequestParam("linkId") UUID linkId) {
+    public ResponseEntity<?> start(@RequestParam(value = "linkId", required = false) String linkId) {
         return googleOAuthService.start(linkId);
     }
 

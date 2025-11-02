@@ -34,8 +34,9 @@ public class GoogleOAuthService {
     private final TokenService tokenService;
     private final AssistantCalendarChooseUpdateHandler handler;
 
-    public ResponseEntity<?> start(UUID linkId) {
+    public ResponseEntity<?> start(String strLinkId) {
         try {
+            UUID linkId = UUID.fromString(strLinkId);
             var consumed = linkState.consumeLinkAndMakeState(linkId);
             var state = consumed.state();        // UUID
             var verifier = consumed.verifier();  // PKCE verifier
@@ -69,7 +70,7 @@ public class GoogleOAuthService {
             return ResponseEntity.status(302).location(URI.create(authUrl)).build();
 //            return authUrl;
         } catch (IllegalStateException ex) {
-            log.warn("Invalid link {}: {}", linkId, ex.getMessage());
+            log.warn("Invalid link {}: {}", strLinkId, ex.getMessage());
 //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link is invalid or expired");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                  .contentType(MediaType.TEXT_HTML)
