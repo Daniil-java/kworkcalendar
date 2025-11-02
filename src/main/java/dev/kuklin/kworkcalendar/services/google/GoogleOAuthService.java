@@ -69,7 +69,7 @@ public class GoogleOAuthService {
 
             return ResponseEntity.status(302).location(URI.create(authUrl)).build();
 //            return authUrl;
-        } catch (IllegalStateException ex) {
+        } catch (Exception ex) {
             log.warn("Invalid link {}: {}", strLinkId, ex.getMessage());
 //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link is invalid or expired");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
