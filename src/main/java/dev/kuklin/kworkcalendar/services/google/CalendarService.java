@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -68,13 +69,22 @@ public class CalendarService {
 
             Запрос пользователя:
             %s
+            
+            Параметры времени (чтобы ты мог ориентироваться в словах через "30 минут" и тд):
+                Таймзона в календаре пользователя: %s
+                Время на машине, которая отправила это сообщение: %s
 
             Инструкция:
             1. Сравни запрос с каждым событием по следующим полям:
                - summary (название)
                - description (описание)
                - дата и время (start и end)
-            2. Учитывай смысловое совпадение. Пользователь может описывать событие другими словами, указывать только часть названия или дату.
+            2. Учитывай смысловое и словесное совпадение. Пользователь может описывать событие другими словами, указывать только часть названия или дату.
+                Пример:
+                    -Удали все встречи на завтра
+                        Тебе нужно найти все события которые являются встречами
+                    Встретилось какое-то уникально слово, например "бот"  найди события с этим словом. 
+                    
             3. Если в запросе пользователь говорит «все события», «удали все на сегодня», «удали встречи за завтра» — выбери все подходящие по этим параметрам.
             4. Если упомянуто несколько названий, дат или временных периодов — выбери все совпадающие события.
             5. Ответ должен быть в строгом формате JSON‑массива строк с **eventId**:
@@ -243,7 +253,7 @@ public class CalendarService {
      * @return null - если у пользователя не установлен календарь
      * @throws TokenRefreshException - авторизация просрочена или ошибка на стороне гугла
      */
-    public List<Event> findEventsToRemoveForNextYear(ActionKnot actionKnot, Long telegramId) throws IOException, TokenRefreshException {
+    public List<Event> findEventsToRemoveForNextYear(ActionKnot actionKnot, Long telegramId, String tz) throws IOException, TokenRefreshException {
         String accessToken = tokenService.ensureAccessTokenOrNull(telegramId);
         String calendarId = getCalendarIdOrNull(telegramId, accessToken);
         if (calendarId == null) {
@@ -258,7 +268,9 @@ public class CalendarService {
                 CalendarServiceUtils.getRequestByEventsList(yearEvents),
                 "Название: " + calendarResponse.getSummary()
                         + ". Описание: " + calendarResponse.getDescription()
-                        + ". Дата: " + calendarResponse.getStart()
+                        + ". Дата: " + calendarResponse.getStart(),
+                tz,
+                OffsetDateTime.now()
         );
         String aiResponse = openAiIntegrationService.fetchResponse(
                 components.getAiKey(), request);

@@ -121,7 +121,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
             } else if (actionKnot.getAction() == ActionKnot.Action.EVENT_DELETE) {
                 List<Event> eventsForRemoving = calendarService
                         .findEventsToRemoveForNextYear(
-                                actionKnot, telegramUser.getTelegramId());
+                                actionKnot, telegramUser.getTelegramId(), tz);
 
                 if (eventsForRemoving == null) {
                     assistantTelegramBot.sendReturnedMessage(chatId, CALENDAR_NOT_SET_ERROR_MESSAGE);
