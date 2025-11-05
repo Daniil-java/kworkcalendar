@@ -32,6 +32,8 @@ public class AssistantTodayUpdateHandler implements UpdateHandler {
     public void handle(Update update, TelegramUser telegramUser) {
         Message message = update.getMessage();
         Long chatId = message.getChatId();
+        assistantTelegramBot.sendChatActionTyping(chatId);
+
         String calendarId = userGoogleCalendarService.getUserCalendarIdByTelegramIdOrNull(telegramUser.getTelegramId());
         if (calendarId == null) {
             assistantTelegramBot.sendReturnedMessage(chatId, SetCalendarIdUpdateHandler.CALENDAR_IS_NULL_MSG);

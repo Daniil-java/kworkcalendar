@@ -62,11 +62,15 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
             "Попробуйте обратиться позже!";
     private static final String CALENDAR_NOT_SET_ERROR_MESSAGE =
             "Вам необходимо установить календарь!";
-
     private static final Locale RU = new Locale("ru");
     private static final DateTimeFormatter DATE_TIME_FMT =
             DateTimeFormatter.ofPattern("d MMMM, HH:mm", RU);
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_ONLY_FMT =
+            DateTimeFormatter.ofPattern("d MMMM", RU);
+    private static final DateTimeFormatter DAY_OF_WEEK_FMT =
+            DateTimeFormatter.ofPattern("EEE", RU);
+    private static final DateTimeFormatter DATE_FMT =
             DateTimeFormatter.ofPattern("d MMMM", RU);
 
     private static final int MAX_VOICE_SECONDS = 60;
@@ -76,6 +80,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
     public void handle(Update update, TelegramUser telegramUser) {
         Message message = update.getMessage();
         Long chatId = message.getChatId();
+        assistantTelegramBot.sendChatActionTyping(chatId);
 
         //Проверка на количество символов в текстовом сообщении
         if (message.getText() != null && message.getText().length() > MAX_TEXT_CHARS) {
@@ -186,61 +191,78 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
     private void sendEventMessage(Long chatId, Event event) {
         assistantTelegramBot.sendReturnedMessage(
                 chatId,
-                getResponseString(event),
+                getResponseAddEventString(event),
                 getInlineDeleteMessage(event.getId()),
                 null
         );
     }
 
     public static String getResponseAddEventString(Event event) {
-        StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
 
         String summary = event.getSummary();
-        if (summary == null) {
-            summary = "Без названия";
-        }
-        stringBuilder.append("<b>✅ Задача добавлена в календарь: </b> ").append(summary)
-                .append(" " + formatHumanReadable(event.getStart())).append("\n");
+        if (summary == null) {summary = "Без названия";}
 
-        return stringBuilder.toString();
+        String description = event.getDescription();
+        if (description.equals("Добавлено через Telegram-бота")) description = "";
+
+        sb
+                .append("[").append(summary).append("]").append("\n")
+                .append("Дата: ").append(formatHumanReadableDayAndMonth(event.getStart()))
+                .append("Время: ").append(formatHumanReadableTimeBetweenStartAndEnd(event.getStart(), event.getEnd())).append("\n")
+                .append("Заметки: ").append(description);
+
+        return sb.toString();
     }
 
-    public static String getResponseString(Event event) {
+    private static String formatHumanReadableTimeBetweenStartAndEnd(EventDateTime start, EventDateTime end) {
+        boolean isAllDayStart = start.getDateTime() == null;
+        boolean isAllDayEnd = end.getDateTime() == null;
 
-        StringBuilder stringBuilder = new StringBuilder();
-        String description = event.getDescription() != null
-                ? event.getDescription()
-                : "Не указано";
-
-        String summary = event.getSummary();
-        if (summary == null) {
-            summary = "Без названия";
+        // ----- Весь день -----
+        if (isAllDayStart || isAllDayEnd) {
+            return "Весь день";
         }
-        stringBuilder.append("\uD83D\uDCC5 <b>Мероприятие:</b> ").append(summary).append("\n");
-        if (!description.equals("Добавлено через Telegram-бота")) {
-            stringBuilder.append("\uD83D\uDCDD <b>Описание:</b> ").append(description).append("\n");
 
+        // ----- Обычные события с временем -----
+        OffsetDateTime startOdt = OffsetDateTime.parse(start.getDateTime().toStringRfc3339());
+        OffsetDateTime endOdt = OffsetDateTime.parse(end.getDateTime().toStringRfc3339());
+
+        // Событие в пределах одного дня
+        if (startOdt.toLocalDate().equals(endOdt.toLocalDate())) {
+            return String.format("%s - %s",
+                    startOdt.format(TIME_FMT),
+                    endOdt.format(TIME_FMT));
         }
-        stringBuilder.append("⏰ <b>Начало:</b> ").append(formatHumanReadable(event.getStart())).append("\n");
-        stringBuilder.append("\uD83C\uDFC1 <b>Конец:</b> ").append(formatHumanReadable(event.getEnd()));
 
-        return stringBuilder.toString();
+        // Событие на разные даты
+        return String.format("%s - %s",
+                startOdt.format(DATE_TIME_FMT),
+                endOdt.format(DATE_TIME_FMT));
     }
 
-    private static String formatHumanReadable(EventDateTime eventDateTime) {
+    private static String formatHumanReadableDayAndMonth(EventDateTime eventDateTime) {
+        LocalDate date;
+
         if (eventDateTime.getDateTime() != null) {
-            String rfc = eventDateTime.getDateTime().toStringRfc3339(); // безопаснее, чем toString()
-            OffsetDateTime odt = OffsetDateTime.parse(rfc);
-            return odt.format(DATE_TIME_FMT) + " (" + odt.getOffset().toString() + ")";
+            // событие со временем
+            OffsetDateTime odt = OffsetDateTime.parse(eventDateTime.getDateTime().toStringRfc3339());
+            date = odt.toLocalDate();
+        } else if (eventDateTime.getDate() != null) {
+            // событие на весь день (без времени)
+            date = LocalDate.parse(eventDateTime.getDate().toStringRfc3339());
+        } else {
+            return "—"; // нет даты вообще
         }
 
-        // all-day event (dateTime == null, используем date)
-        if (eventDateTime.getDate() != null) {
-            LocalDate ld = LocalDate.parse(eventDateTime.getDate().toStringRfc3339()); // "YYYY-MM-DD"
-            return ld.format(DATE_ONLY_FMT) + " · весь день";
-        }
+        // Форматируем день недели с заглавной буквы
+        String dayOfWeek = date.format(DAY_OF_WEEK_FMT);
+        dayOfWeek = dayOfWeek.substring(0, 1).toUpperCase(RU) + dayOfWeek.substring(1);
 
-        return "—";
+        // Формируем "(Пн) 6 ноября"
+        String datePart = date.format(DATE_FMT);
+
+        return String.format("(%s) %s", dayOfWeek, datePart);
     }
 
     private String processVoiceMessageOrSendError(Message message) {

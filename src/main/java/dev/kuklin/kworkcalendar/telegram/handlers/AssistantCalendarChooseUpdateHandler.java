@@ -72,6 +72,7 @@ public class AssistantCalendarChooseUpdateHandler implements UpdateHandler {
 
     private void processMessage(Update update, TelegramUser telegramUser) {
         Long chatId = update.getMessage().getChatId();
+        telegramBot.sendChatActionTyping(chatId);
 
         try {
             List<GoogleCacheableCalendar> calendarList = calendarService
@@ -95,6 +96,7 @@ public class AssistantCalendarChooseUpdateHandler implements UpdateHandler {
         CallbackQuery callbackQuery = update.getCallbackQuery();
         Long chatId = callbackQuery.getMessage().getChatId();
         String response = callbackQuery.getData();
+        telegramBot.sendChatActionTyping(chatId);
 
         if (response.startsWith(CHOOSE_CMD)) {
             String id = response.substring(CHOOSE_CMD.length());

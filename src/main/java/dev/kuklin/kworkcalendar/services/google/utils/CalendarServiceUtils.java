@@ -151,17 +151,4 @@ public class CalendarServiceUtils {
                 .setStart(startDT)
                 .setEnd(endDT);
     }
-
-    public static void doSo(ZoneId zoneId) {
-        // Старт: начало сегодняшнего дня в TZ календаря
-        ZonedDateTime start = LocalDate.now(zoneId).atStartOfDay(zoneId);
-        // Конец окна: ровно через год
-        ZonedDateTime end = start.plusYears(1);
-
-        int tzShiftStart = start.getOffset().getTotalSeconds() / 60;
-        int tzShiftEnd   = end.getOffset().getTotalSeconds() / 60;
-
-        DateTime timeMin = new DateTime(start.toInstant().toEpochMilli(), tzShiftStart);
-        DateTime timeMax = new DateTime(end.toInstant().toEpochMilli(), tzShiftEnd);
-    }
 }

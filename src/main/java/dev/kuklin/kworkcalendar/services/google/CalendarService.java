@@ -46,6 +46,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CalendarService {
+    private static final String DEFAULT_SUMMARY = "Телеграм-бот";
+    private static final String DEFAULT_DESC = "Календарь созданный телеграм-ботом";
+    private static final String DEFAULT_TZ = "Europe/Moscow";
     private final OpenAiIntegrationService openAiIntegrationService;
     private final AiMessageLogService aiMessageLogService;
     private final ObjectMapper objectMapper;
@@ -111,6 +114,28 @@ public class CalendarService {
                     Запрещено добавлять Markdown, кодовые блоки (```), подсветку json, комментарии, пояснения, преамбулы.
             """;
 
+
+    public String createNewServiceCalendarAndGetCalendarIdOrNull(AssistantGoogleOAuth auth) {
+        CalendarContext context = null;
+        try {
+            context = getCalendarContext(auth.getTelegramId());
+        } catch (TokenRefreshException e) {
+            log.error("Google token error!", e);
+            return null;
+        }
+
+        com.google.api.services.calendar.model.Calendar calendar = new com.google.api.services.calendar.model.Calendar();
+        calendar.setSummary(DEFAULT_SUMMARY).setDescription(DEFAULT_DESC).setTimeZone(DEFAULT_TZ);
+
+        try {
+            calendar = context.getCalendar().calendars().insert(calendar).execute();
+        } catch (IOException e) {
+            log.error("Google connection error!", e);
+            return null;
+        }
+        return calendar.getId();
+
+    }
 
     public Event addEventInCalendar(CalendarContext calendarContext,
                                     CalendarEventAiResponse request, Long telegramId)

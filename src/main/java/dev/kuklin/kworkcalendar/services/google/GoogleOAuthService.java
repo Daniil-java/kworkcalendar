@@ -32,6 +32,7 @@ public class GoogleOAuthService {
     private final LinkStateService linkState;
     private final GoogleOAuthHttpClient google;
     private final TokenService tokenService;
+    private final CalendarService calendarService;
     private final AssistantCalendarChooseUpdateHandler handler;
 
     public ResponseEntity<?> start(String strLinkId) {
@@ -123,8 +124,14 @@ public class GoogleOAuthService {
             AssistantGoogleOAuth auth = tokenService
                     .saveFromAuthCallback(cb.telegramId(), tokens, userInfo, Instant.now());
 
-            // 5) Отправка уведомления пользователю
-            handler.handleGoogleCallback(auth);
+            String calendarId = calendarService.createNewServiceCalendarAndGetCalendarIdOrNull(auth);
+            if (calendarId == null) {
+                // 5) Отправка уведомления пользователю
+                handler.handleGoogleCallback(auth);
+            } else {
+                tokenService.setDefaultCalendarOrNull(auth.getTelegramId(), calendarId);
+            }
+
             // 6) Успех (можно редиректнуть в tg: https://t.me/<bot>?start=connected)
             return ResponseEntity.ok(Map.of(
                     "status", "connected",

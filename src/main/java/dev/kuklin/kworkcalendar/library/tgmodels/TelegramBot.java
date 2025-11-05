@@ -2,8 +2,10 @@ package dev.kuklin.kworkcalendar.library.tgmodels;
 
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.ActionType;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.ParseMode;
+import org.telegram.telegrambots.meta.api.methods.send.SendChatAction;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendVoice;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
@@ -139,5 +141,16 @@ public abstract class TelegramBot extends TelegramLongPollingBot implements Tele
                 .disableWebPagePreview(true)
                 .parseMode(ParseMode.HTML)
                 .build();
+    }
+
+    public void sendChatActionTyping(Long chatId) {
+        SendChatAction typingAction = new SendChatAction();
+        typingAction.setChatId(chatId);
+        typingAction.setAction(ActionType.TYPING);
+        try {
+            execute(typingAction);
+        } catch (TelegramApiException e) {
+            log.error("Не получилось отправить ChatAction!");
+        }
     }
 }
