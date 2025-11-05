@@ -79,6 +79,13 @@ public class AssistantCalendarChooseUpdateHandler implements UpdateHandler {
         }
     }
 
+    public void sendProcessDeniedMessage(Long telegramId) {
+        telegramBot.sendReturnedMessage(
+                telegramId,
+                "❌ Подключение не удалось. Попробуйте снова или обратитесь позже!"
+        );
+    }
+
     private void processMessage(Update update, TelegramUser telegramUser) {
         Long chatId = update.getMessage().getChatId();
         telegramBot.sendChatActionTyping(chatId);
