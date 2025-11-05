@@ -150,7 +150,11 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
                 }
 
                 Event oldEvent = calendarService.getEventById(calendarContext, eventId);
-                ActionKnot newActionKnot = actionKnotService.getActionKnotForEditMessageOrNull(request, oldEvent);
+                String reply = message.getReplyToMessage() != null
+                        ? "\n Сообщение на которое ссылается пользоваетль: " + message.getReplyToMessage().getText()
+                        : "";
+                ActionKnot newActionKnot = actionKnotService
+                        .getActionKnotForEditMessageOrNull(request + reply, oldEvent);
                 Event event = calendarService.editEventInCalendar(calendarContext, eventId, newActionKnot);
                 sendEventMessage(chatId, event);
             }
