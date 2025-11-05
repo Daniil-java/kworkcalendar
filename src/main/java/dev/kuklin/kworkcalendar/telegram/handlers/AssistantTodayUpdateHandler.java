@@ -55,29 +55,14 @@ public class AssistantTodayUpdateHandler implements UpdateHandler {
 
     private String getTodayEventsString(List<Event> events) {
         StringBuilder sb = new StringBuilder();
-        sb.append("На сегодня запланировано:  \n");
+        sb.append("На сегодня запланировано: ");
         for (Event event: events) {
-            sb.append("───────\n");
+            sb.append("\n───────\n");
             sb.append(CalendarEventUpdateHandler.getResponseEventString(event));
         }
 
         return sb.append("\n").toString();
     }
-
-//    private String getTodayEventsString(List<Event> events) {
-//        StringBuilder stringBuilder = new StringBuilder();
-//        stringBuilder.append("На сегодня запланировано:  \n");
-//        for (Event event: events) {
-//            stringBuilder.append(getTimeHHMM(event.getStart()));
-//            stringBuilder.append(" - ");
-//            stringBuilder.append(getTimeHHMM(event.getEnd()));
-//            stringBuilder.append(" ").append(event.getSummary());
-//
-//            stringBuilder.append("\n");
-//        }
-//
-//        return stringBuilder.toString();
-//    }
 
     private String getTimeHHMM(EventDateTime eventDateTime) {
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
