@@ -133,9 +133,11 @@ public class GoogleOAuthService {
             handler.handleGoogleCallback(auth, calendarId != null);
 
             // 6) Успех (можно редиректнуть в tg: https://t.me/<bot>?start=connected)
-            return ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_HTML)
-                    .body(closeRequestPage);
+            return ResponseEntity.ok(Map.of(
+                    "status", "connected",
+                    "email", userInfo.email(),
+                    "sub", userInfo.sub()
+            ));
         } catch (RestClientResponseException ex) {
             // Здесь поймаем тело от Google (invalid_grant/redirect_uri_mismatch/etc)
             log.warn("OAUTH TOKEN EXCHANGE FAILED: status={} body={}", ex.getRawStatusCode(), ex.getResponseBodyAsString());

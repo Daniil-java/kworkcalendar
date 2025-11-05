@@ -113,7 +113,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
                         calendarContext, calendarRequest, telegramUser.getTelegramId());
                 assistantTelegramBot.sendReturnedMessage(
                         chatId,
-                        getResponseAddEventString(event),
+                        getResponseEventString(event),
                         getInlineDeleteMessage(event.getId()),
                         null
                 );
@@ -121,7 +121,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
             } else if (actionKnot.getAction() == ActionKnot.Action.EVENT_DELETE) {
                 List<Event> eventsForRemoving = calendarService
                         .findEventsToRemoveForNextYear(
-                                actionKnot, telegramUser.getTelegramId());
+                                actionKnot, telegramUser.getTelegramId(), tz);
 
                 if (eventsForRemoving == null) {
                     assistantTelegramBot.sendReturnedMessage(chatId, CALENDAR_NOT_SET_ERROR_MESSAGE);
@@ -150,7 +150,11 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
                 }
 
                 Event oldEvent = calendarService.getEventById(calendarContext, eventId);
-                ActionKnot newActionKnot = actionKnotService.getActionKnotForEditMessageOrNull(request, oldEvent);
+                String reply = message.getReplyToMessage() != null
+                        ? "\n Сообщение на которое ссылается пользоваетль: " + message.getReplyToMessage().getText()
+                        : "";
+                ActionKnot newActionKnot = actionKnotService
+                        .getActionKnotForEditMessageOrNull(request + reply, oldEvent);
                 Event event = calendarService.editEventInCalendar(calendarContext, eventId, newActionKnot);
                 sendEventMessage(chatId, event);
             }
@@ -191,13 +195,13 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
     private void sendEventMessage(Long chatId, Event event) {
         assistantTelegramBot.sendReturnedMessage(
                 chatId,
-                getResponseAddEventString(event),
+                getResponseEventString(event),
                 getInlineDeleteMessage(event.getId()),
                 null
         );
     }
 
-    public static String getResponseAddEventString(Event event) {
+    public static String getResponseEventString(Event event) {
         StringBuilder sb = new StringBuilder();
 
         String summary = event.getSummary();
@@ -208,9 +212,9 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
 
         sb
                 .append("[").append(summary).append("]").append("\n")
-                .append("Дата: ").append(formatHumanReadableDayAndMonth(event.getStart())).append("\n")
-                .append("Время: ").append(formatHumanReadableTimeBetweenStartAndEnd(event.getStart(), event.getEnd())).append("\n")
-                .append("Заметки: ").append(description);
+                .append("• Дата: ").append(formatHumanReadableDayAndMonth(event.getStart())).append("\n")
+                .append("• Время: ").append(formatHumanReadableTimeBetweenStartAndEnd(event.getStart(), event.getEnd())).append("\n")
+                .append("• Заметки: ").append(description);
 
         return sb.toString();
     }
