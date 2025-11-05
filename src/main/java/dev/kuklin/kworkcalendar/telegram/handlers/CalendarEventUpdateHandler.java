@@ -113,7 +113,7 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
                         calendarContext, calendarRequest, telegramUser.getTelegramId());
                 assistantTelegramBot.sendReturnedMessage(
                         chatId,
-                        getResponseAddEventString(event),
+                        getResponseEventString(event),
                         getInlineDeleteMessage(event.getId()),
                         null
                 );
@@ -191,13 +191,13 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
     private void sendEventMessage(Long chatId, Event event) {
         assistantTelegramBot.sendReturnedMessage(
                 chatId,
-                getResponseAddEventString(event),
+                getResponseEventString(event),
                 getInlineDeleteMessage(event.getId()),
                 null
         );
     }
 
-    public static String getResponseAddEventString(Event event) {
+    public static String getResponseEventString(Event event) {
         StringBuilder sb = new StringBuilder();
 
         String summary = event.getSummary();
