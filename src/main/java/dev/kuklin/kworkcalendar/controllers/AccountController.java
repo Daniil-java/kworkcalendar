@@ -11,18 +11,18 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
     private final TokenService tokenService;
 
-    @GetMapping("/status/{telegram_id}")
-    public AssistantGoogleOAuth status(@PathVariable Long telegram_id) {
-        return tokenService.findByTelegramIdOrNull(telegram_id);
+    @GetMapping("/status/{telegramId}")
+    public AssistantGoogleOAuth status(@PathVariable Long telegramId) {
+        return tokenService.findByTelegramIdOrNull(telegramId);
     }
 
-    @PostMapping("/calendar/{telegram_id}")
-    public void setDefaultCalendar(@PathVariable Long telegram_id, @RequestParam String calendarId) {
-        tokenService.setDefaultCalendarOrNull(telegram_id, calendarId);
+    @PostMapping("/calendar/{telegramId}")
+    public void setDefaultCalendar(@PathVariable Long telegramId, @RequestParam String calendarId) {
+        tokenService.setDefaultCalendarOrNull(telegramId, calendarId);
     }
 
-    @DeleteMapping("/disconnect/{telegram_id}")
-    public void disconnect(@PathVariable Long telegram_id) {
-        tokenService.revokeAndDelete(telegram_id);
+    @DeleteMapping("/disconnect/{telegramId}")
+    public void disconnect(@PathVariable Long telegramId) {
+        tokenService.revokeAndDelete(telegramId);
     }
 }

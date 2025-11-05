@@ -90,7 +90,7 @@ public class EventNotificationSchedulerProcessor implements ScheduleProcessor {
 
             //Отправляем сообщение в телеграм
             Message message = telegramBot.sendReturnedMessage(telegramId,
-                    CalendarEventUpdateHandler.getResponseString(event));
+                    CalendarEventUpdateHandler.getResponseAddEventString(event));
             //Поемячем, что уведомили о мероприятии
             if (message != null) {
                 notifiedEventService.markAsNotified(calendarId, event.getId(), telegramId);

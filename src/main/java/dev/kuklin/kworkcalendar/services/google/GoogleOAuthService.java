@@ -28,10 +28,12 @@ import java.util.UUID;
 public class GoogleOAuthService {
 
     private final Resource badRequestPage = new ClassPathResource("static/error.html");
+    private final Resource closeRequestPage = new ClassPathResource("static/close.html");
     private final GoogleOAuthProperties props;
     private final LinkStateService linkState;
     private final GoogleOAuthHttpClient google;
     private final TokenService tokenService;
+    private final CalendarService calendarService;
     private final AssistantCalendarChooseUpdateHandler handler;
 
     public ResponseEntity<?> start(String strLinkId) {
@@ -124,16 +126,20 @@ public class GoogleOAuthService {
                     .saveFromAuthCallback(cb.telegramId(), tokens, userInfo, Instant.now());
 
             // 5) Отправка уведомления пользователю
-            handler.handleGoogleCallback(auth);
+            String calendarId = calendarService.createNewServiceCalendarAndGetCalendarIdOrNull(auth);
+            if (calendarId != null) {
+                tokenService.setDefaultCalendarOrNull(auth.getTelegramId(), calendarId);
+            }
+            handler.handleGoogleCallback(auth, calendarId != null);
+
             // 6) Успех (можно редиректнуть в tg: https://t.me/<bot>?start=connected)
-            return ResponseEntity.ok(Map.of(
-                    "status", "connected",
-                    "email", userInfo.email(),
-                    "sub", userInfo.sub()
-            ));
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(closeRequestPage);
         } catch (RestClientResponseException ex) {
             // Здесь поймаем тело от Google (invalid_grant/redirect_uri_mismatch/etc)
             log.warn("OAUTH TOKEN EXCHANGE FAILED: status={} body={}", ex.getRawStatusCode(), ex.getResponseBodyAsString());
+            handler.sendProcessDeniedMessage(cb.telegramId());
             return ResponseEntity.status(ex.getRawStatusCode()).body(Map.of(
                     "status", "error",
                     "google_status", ex.getRawStatusCode(),

@@ -27,6 +27,7 @@ public class SetCalendarIdUpdateHandler implements UpdateHandler {
         //Ожидается сообщение формата /set calendarId
         Message message = update.getMessage();
         Long chatId = message.getChatId();
+        assistantTelegramBot.sendChatActionTyping(chatId);
 
         String calendarId = extractCalendarId(message.getText());
         if (calendarId == null) {
