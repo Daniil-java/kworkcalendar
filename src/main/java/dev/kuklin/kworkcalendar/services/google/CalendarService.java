@@ -263,6 +263,10 @@ public class CalendarService {
         List<Event> yearEvents = getNextYearEvents(telegramId);
 
         CalendarEventAiResponse calendarResponse = actionKnot.getCalendarEventAiResponse();
+
+        if (calendarResponse.getDescription().equals("Добавлено через Telegram-бота"))
+            calendarResponse.setDescription("");
+
         String request = String.format(
                 AI_REMOVE_REQUEST,
                 CalendarServiceUtils.getRequestByEventsList(yearEvents),
