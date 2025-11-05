@@ -124,13 +124,12 @@ public class GoogleOAuthService {
             AssistantGoogleOAuth auth = tokenService
                     .saveFromAuthCallback(cb.telegramId(), tokens, userInfo, Instant.now());
 
+            // 5) Отправка уведомления пользователю
             String calendarId = calendarService.createNewServiceCalendarAndGetCalendarIdOrNull(auth);
-            if (calendarId == null) {
-                // 5) Отправка уведомления пользователю
-                handler.handleGoogleCallback(auth);
-            } else {
+            if (calendarId != null) {
                 tokenService.setDefaultCalendarOrNull(auth.getTelegramId(), calendarId);
             }
+            handler.handleGoogleCallback(auth, calendarId != null);
 
             // 6) Успех (можно редиректнуть в tg: https://t.me/<bot>?start=connected)
             return ResponseEntity.ok(Map.of(

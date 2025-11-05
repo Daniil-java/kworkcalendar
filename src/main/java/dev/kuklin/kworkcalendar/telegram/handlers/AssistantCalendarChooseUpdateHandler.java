@@ -54,16 +54,25 @@ public class AssistantCalendarChooseUpdateHandler implements UpdateHandler {
 
     }
 
-    public void handleGoogleCallback(AssistantGoogleOAuth auth) {
+    public void handleGoogleCallback(AssistantGoogleOAuth auth, boolean isCalendarSet) {
         try {
-            List<GoogleCacheableCalendar> calendarList = calendarService
-                    .listUserCalendarsOrNull(auth.getTelegramId());
+            if (!isCalendarSet) {
+                List<GoogleCacheableCalendar> calendarList = calendarService
+                        .listUserCalendarsOrNull(auth.getTelegramId());
 
-            String response =
-                    """
-                    ✅ Подключение успешно! Теперь просто выбери календарь и отправляй мне задачи текстом или голосом — я добавлю их в календарь.
-                    """;
-            telegramBot.sendReturnedMessage(auth.getTelegramId(), response, getCalendarListKeyboard(calendarList), null);
+                String response =
+                        """
+                        ✅ Подключение успешно! Теперь просто выбери календарь и отправляй мне задачи текстом или голосом — я добавлю их в календарь.
+                        """;
+                telegramBot.sendReturnedMessage(auth.getTelegramId(), response, getCalendarListKeyboard(calendarList), null);
+            } else {
+                String response =
+                        """
+                        ✅ Подключение успешно! Теперь отправляй мне задачи текстом или голосом — я добавлю их в календарь.
+                        """;
+                telegramBot.sendReturnedMessage(auth.getTelegramId(), response);
+            }
+
         } catch (Exception ignore) {
             telegramBot.sendReturnedMessage(auth.getTelegramId(),
                     GOOGLE_AUTH_CALLBACK_ERROR_MESSAGE + Command.ASSISTANT_CHOOSE_CALENDAR.getCommandText());
