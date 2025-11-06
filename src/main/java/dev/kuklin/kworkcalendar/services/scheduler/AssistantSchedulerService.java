@@ -13,13 +13,13 @@ public class AssistantSchedulerService {
     private final EventNotificationSchedulerProcessor eventNotificationSchedulerProcessor;
     private final EventNotificationNoteCleanTableScheduleProcessor eventNotificationNoteCleanTableScheduleProcessor;
 
-    @Scheduled(cron = "0 */1 * * * *")
+    @Scheduled(cron = "0 */3 * * * *")
     public void eventNotificationSchedulerProcess() {
         getInfo(eventNotificationSchedulerProcessor.getSchedulerName());
         eventNotificationSchedulerProcessor.process();
     }
 
-    @Scheduled(cron = "0 */2 * * * *")
+    @Scheduled(cron = "0 */10 * * * *")
     public void eventNotificationNoteCleanTableScheduleProcess() {
         getInfo(eventNotificationNoteCleanTableScheduleProcessor.getSchedulerName());
         eventNotificationNoteCleanTableScheduleProcessor.process();

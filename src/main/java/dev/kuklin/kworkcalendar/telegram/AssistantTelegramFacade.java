@@ -49,6 +49,10 @@ public class AssistantTelegramFacade extends TelegramFacade {
             return getUpdateHandlerMap().get(Command.ASSISTANT_CHOOSE_CALENDAR.getCommandText());
         }
 
+        if (request.startsWith(Command.ASSISTANT_AUTH_STATUS.getCommandText())) {
+            return getUpdateHandlerMap().get(Command.ASSISTANT_AUTH_STATUS.getCommandText());
+        }
+
         UpdateHandler updateHandler = getUpdateHandlerMap().get(request);
         if (updateHandler == null) {
             return getUpdateHandlerMap().get(Command.ASSISTANT_VOICE.getCommandText());
