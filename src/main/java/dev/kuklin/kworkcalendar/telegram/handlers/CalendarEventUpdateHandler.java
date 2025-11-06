@@ -208,7 +208,12 @@ public class CalendarEventUpdateHandler implements UpdateHandler {
         if (summary == null) {summary = "Без названия";}
 
         String description = event.getDescription();
-        if (description.equals("Добавлено через Telegram-бота")) description = "";
+        if (description.equals("Добавлено через Telegram-бота")) {
+            description = "";
+        }
+        if (!description.equals("Добавлено через Telegram-бота") && description.contains("Добавлено через Telegram-бота")) {
+            description = event.getDescription().replace("Добавлено через Telegram-бота", "");
+        }
 
         sb
                 .append("[").append(summary).append("]").append("\n")

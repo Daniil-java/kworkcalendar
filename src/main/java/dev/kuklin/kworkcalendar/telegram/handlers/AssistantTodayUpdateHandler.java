@@ -34,11 +34,6 @@ public class AssistantTodayUpdateHandler implements UpdateHandler {
         Long chatId = message.getChatId();
         assistantTelegramBot.sendChatActionTyping(chatId);
 
-        String calendarId = userGoogleCalendarService.getUserCalendarIdByTelegramIdOrNull(telegramUser.getTelegramId());
-        if (calendarId == null) {
-            assistantTelegramBot.sendReturnedMessage(chatId, SetCalendarIdUpdateHandler.CALENDAR_IS_NULL_MSG);
-        }
-
         String response = ERROR_MSG;
         try {
             List<Event> events = calendarService.getTodayEvents(telegramUser.getTelegramId());
