@@ -158,11 +158,13 @@ public abstract class TelegramBot extends TelegramLongPollingBot implements Tele
     public void notifyAlreadyInProcess(Update update) {
         try {
             User user = CommonUtils.getUserFromUpdateNew(update);
-            execute(TgMessagesLibrary.getInlineOkKeyboard(user.getId(),
-                                                                      "The previous message is being processed, you need to wait for its completion", "OK",
-                                                                      "DELETE"));
+            execute(TgMessagesLibrary.getInlineOkKeyboard(
+                user.getId(),
+                "The previous message is being processed, you need to wait for its completion",
+                "OK",
+                "DELETE"));
         } catch (TelegramApiException e) {
-            getLogger().error("Error sending in progress message", e);
+            log.error("Error sending in progress message", e);
         }
     }
 }
