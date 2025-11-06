@@ -52,6 +52,6 @@ public class AuthStatusUpdateHandler implements UpdateHandler {
 
     @Override
     public String getHandlerListName() {
-        return Command.ASSISTANT_AUTH.getCommandText();
+        return Command.ASSISTANT_AUTH_STATUS.getCommandText();
     }
 }
