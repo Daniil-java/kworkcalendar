@@ -79,7 +79,11 @@ public class TokenService {
     public void revokeAndDelete(long telegramId) {
         AssistantGoogleOAuth auth = repo.findById(telegramId).orElse(null);
         if (auth != null && auth.getRefreshTokenEnc() != null) {
-            google.revoke(crypto.decrypt(auth.getRefreshTokenEnc()));
+            try {
+                google.revoke(crypto.decrypt(auth.getRefreshTokenEnc()));
+            } catch (Exception e) {
+                log.error("Failed to revoke token for telegramId={}", telegramId, e);
+            }
         }
         if (auth != null) repo.delete(auth);
     }
