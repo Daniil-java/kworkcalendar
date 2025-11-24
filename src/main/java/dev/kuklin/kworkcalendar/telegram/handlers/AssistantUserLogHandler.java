@@ -7,20 +7,26 @@ import dev.kuklin.kworkcalendar.services.UserMessagesLogExportService;
 import dev.kuklin.kworkcalendar.telegram.AssistantTelegramBot;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.IOException;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
 public class AssistantUserLogHandler implements UpdateHandler {
     private final AssistantTelegramBot assistantTelegramBot;
     private final UserMessagesLogExportService exportService;
+    private static final Set<Long> ADMIN_IDS = Set.of(
+            425120436L, //kuklin_daniil
+            457794501L, //cherny_shov_dm
+            457794501L,  //plai_admin
+            5978082232L //dm_chernyshovv
+    );
     @Override
     public void handle(Update update, TelegramUser telegramUser) {
-        if (!telegramUser.getTelegramId().equals(425120436L)) {
+        if (!ADMIN_IDS.contains(telegramUser.getTelegramId())) {
             return;
         }
         Long chatId = update.getMessage().getChatId();
