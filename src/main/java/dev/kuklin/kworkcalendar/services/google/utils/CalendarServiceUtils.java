@@ -109,9 +109,27 @@ public class CalendarServiceUtils {
                 .setTimeZone(zoneId.toString());
     }
 
+    private static Event.Reminders getReminders(CalendarEventAiResponse request) {
+        //Напоминания
+        List<EventReminder> reminderList = new ArrayList<>();
+        for (Integer notifyIn: request.getNotifyInMinutesList()) {
+            reminderList.add(
+                    new EventReminder()
+                            .setMethod("popup")
+                            .setMinutes(notifyIn)
+            );
+        }
+
+        return new Event.Reminders()
+                .setUseDefault(reminderList.size() == 0) // важно: отключаем дефолтные, иначе будут только стандартные Google
+                .setOverrides(reminderList);
+    }
+
     public static Event normalizeEventRequest(CalendarEventAiResponse request, String timeZone) {
         //Дефолтное время длительности
         int defaultPlusTime = 1;
+
+        Event.Reminders reminders = getReminders(request);
 
         ZoneId zoneId = ZoneId.of(timeZone);
         ZonedDateTime now = ZonedDateTime.now(zoneId);
@@ -125,20 +143,6 @@ public class CalendarServiceUtils {
                     .setDate(new DateTime(startDate.toString())); // YYYY-MM-DD
             EventDateTime endAllDay = new EventDateTime()
                     .setDate(new DateTime(startDate.plusDays(1).toString())); // end эксклюзивно
-
-            //Напоминания
-            List<EventReminder> reminderList = new ArrayList<>();
-            for (Integer notifyIn: request.getNotifyInMinutesList()) {
-                reminderList.add(
-                        new EventReminder()
-                                .setMethod("popup")
-                                .setMinutes(notifyIn)
-                );
-            }
-
-            Event.Reminders reminders = new Event.Reminders()
-                    .setUseDefault(reminderList.size() == 0) // важно: отключаем дефолтные, иначе будут только стандартные Google
-                    .setOverrides(reminderList);
 
             return new Event()
                     .setSummary(request.getSummary())
@@ -179,7 +183,9 @@ public class CalendarServiceUtils {
                 .setSummary(request.getSummary())
                 .setDescription(request.getDescription())
                 .setStart(startDT)
-                .setEnd(endDT);
+                .setEnd(endDT)
+                .setReminders(reminders)
+                ;
     }
 
     /**
