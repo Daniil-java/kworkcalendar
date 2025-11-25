@@ -4,10 +4,12 @@ import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
+import com.google.api.services.calendar.model.EventReminder;
 import dev.kuklin.kworkcalendar.models.CalendarEventAiResponse;
 
 import java.time.*;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CalendarServiceUtils {
@@ -51,12 +53,6 @@ public class CalendarServiceUtils {
             EventDateTime endDT = new EventDateTime()
                     .setDateTime(new DateTime(end.toInstant().toEpochMilli()))
                     .setTimeZone(timeZone);
-//            EventDateTime startDT = new EventDateTime()
-//                    .setDateTime(new DateTime(start.toInstant().toEpochMilli(), start.getOffset().getTotalSeconds() / 60))
-//                    .setTimeZone(timeZone);
-//            EventDateTime endDT = new EventDateTime()
-//                    .setDateTime(new DateTime(end.toInstant().toEpochMilli(), end.getOffset().getTotalSeconds() / 60))
-//                    .setTimeZone(timeZone);
 
             patch.setStart(startDT);
             patch.setEnd(endDT);
@@ -66,6 +62,21 @@ public class CalendarServiceUtils {
             patch.setStart(new EventDateTime().setDate(new DateTime(d.toString())));
             patch.setEnd(new EventDateTime().setDate(new DateTime(d.plusDays(1).toString())));
         }
+
+        //Напоминания
+        List<EventReminder> reminderList = new ArrayList<>();
+        for (Integer notifyIn: req.getNotifyInMinutesList()) {
+            reminderList.add(
+                    new EventReminder()
+                            .setMethod("popup")
+                            .setMinutes(notifyIn)
+            );
+        }
+
+        Event.Reminders reminders = new Event.Reminders()
+                .setUseDefault(reminderList.size() == 0) // важно: отключаем дефолтные, иначе будут только стандартные Google
+                .setOverrides(reminderList);
+        patch.setReminders(reminders);
 
         return patch;
     }
@@ -98,8 +109,27 @@ public class CalendarServiceUtils {
                 .setTimeZone(zoneId.toString());
     }
 
+    private static Event.Reminders getReminders(CalendarEventAiResponse request) {
+        //Напоминания
+        List<EventReminder> reminderList = new ArrayList<>();
+        for (Integer notifyIn: request.getNotifyInMinutesList()) {
+            reminderList.add(
+                    new EventReminder()
+                            .setMethod("popup")
+                            .setMinutes(notifyIn)
+            );
+        }
+
+        return new Event.Reminders()
+                .setUseDefault(reminderList.size() == 0) // важно: отключаем дефолтные, иначе будут только стандартные Google
+                .setOverrides(reminderList);
+    }
+
     public static Event normalizeEventRequest(CalendarEventAiResponse request, String timeZone) {
+        //Дефолтное время длительности
         int defaultPlusTime = 1;
+
+        Event.Reminders reminders = getReminders(request);
 
         ZoneId zoneId = ZoneId.of(timeZone);
         ZonedDateTime now = ZonedDateTime.now(zoneId);
@@ -118,7 +148,9 @@ public class CalendarServiceUtils {
                     .setSummary(request.getSummary())
                     .setDescription(request.getDescription())
                     .setStart(startAllDay)
-                    .setEnd(endAllDay);
+                    .setEnd(endAllDay)
+                    .setReminders(reminders)
+                    ;
         }
 
         ZonedDateTime start = (request.getStart() != null && !request.getStart().isBlank())
@@ -151,7 +183,9 @@ public class CalendarServiceUtils {
                 .setSummary(request.getSummary())
                 .setDescription(request.getDescription())
                 .setStart(startDT)
-                .setEnd(endDT);
+                .setEnd(endDT)
+                .setReminders(reminders)
+                ;
     }
 
     /**
