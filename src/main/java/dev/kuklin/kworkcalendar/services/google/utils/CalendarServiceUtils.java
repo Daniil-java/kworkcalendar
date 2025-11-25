@@ -9,26 +9,9 @@ import dev.kuklin.kworkcalendar.models.CalendarEventAiResponse;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 
 public class CalendarServiceUtils {
     private static final String DEFAULT_TZ = "Europe/Moscow";
-    private static final Map<Integer, String> OFFSET_TO_ZONE = Map.ofEntries(
-            Map.entry(0,  "UTC"),
-            Map.entry(1,  "Europe/Berlin"),
-            Map.entry(2,  "Europe/Kaliningrad"),
-            Map.entry(3,  "Europe/Moscow"),
-            Map.entry(4,  "Europe/Samara"),
-            Map.entry(5,  "Asia/Yekaterinburg"),
-            Map.entry(6,  "Asia/Novosibirsk"),
-            Map.entry(7,  "Asia/Krasnoyarsk"),
-            Map.entry(8,  "Asia/Irkutsk"),
-            Map.entry(9,  "Asia/Yakutsk"),
-            Map.entry(10, "Asia/Vladivostok"),
-            Map.entry(11, "Asia/Magadan"),
-            Map.entry(12, "Asia/Kamchatka")
-            // при желании добавишь ещё
-    );
 
     public static String getRequestByEventsList(List<Event> events) {
         StringBuilder sb = new StringBuilder();
@@ -186,17 +169,24 @@ public class CalendarServiceUtils {
             return DEFAULT_TZ;
         }
 
-        if (offset == 0) {
-            return "Etc/UTC";
-        }
-
-        if (offset > 0) {
-            // UTC+3 → "Etc/GMT-3"
-            return "Etc/GMT-" + offset;
-        } else {
-            // UTC-2 → "Etc/GMT+2"
-            return "Etc/GMT+" + Math.abs(offset);
-        }
+        return switch (offset) {
+            case 0  -> "Etc/UTC";                       // UTC±0
+            case 1  -> "Europe/Berlin";                 // UTC+1
+            case 2  -> "Europe/Helsinki";               // UTC+2
+            case 3  -> "Europe/Moscow";                 // UTC+3
+            case 4  -> "Europe/Samara";                 // UTC+4
+            case 5  -> "Asia/Yekaterinburg";            // UTC+5
+            case 6  -> "Asia/Almaty";                   // UTC+6
+            case 7  -> "Asia/Bangkok";                  // UTC+7
+            case 8  -> "Asia/Shanghai";                 // UTC+8
+            case 9  -> "Asia/Tokyo";                    // UTC+9
+            case 10 -> "Australia/Sydney";              // UTC+10
+            case 11 -> "Pacific/Noumea";                // UTC+11
+            case 12 -> "Pacific/Auckland";              // UTC+12
+            case 13 -> "Pacific/Tongatapu";             // UTC+13
+            case 14 -> "Pacific/Kiritimati";            // UTC+14
+            default -> "Europe/Moscow";
+        };
     }
 
     public static CalendarListEntry getCalendarListEntryBySummaryOrNull(List<CalendarListEntry> items, String summary) {
