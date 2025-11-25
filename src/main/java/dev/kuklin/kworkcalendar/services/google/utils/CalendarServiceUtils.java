@@ -1,6 +1,7 @@
 package dev.kuklin.kworkcalendar.services.google.utils;
 
 import com.google.api.client.util.DateTime;
+import com.google.api.services.calendar.model.CalendarListEntry;
 import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.EventDateTime;
 import dev.kuklin.kworkcalendar.models.CalendarEventAiResponse;
@@ -10,6 +11,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class CalendarServiceUtils {
+    private static final String DEFAULT_TZ = "Europe/Moscow";
 
     public static String getRequestByEventsList(List<Event> events) {
         StringBuilder sb = new StringBuilder();
@@ -150,5 +152,50 @@ public class CalendarServiceUtils {
                 .setDescription(request.getDescription())
                 .setStart(startDT)
                 .setEnd(endDT);
+    }
+
+    /**
+     * Превращаем смещение от UTC в часах в строку таймзоны
+     * для Google Calendar.
+     *
+     * Используем семейство "Etc/GMT±N":
+     *  - ВАЖНО: в этих зонах знак инвертирован:
+     *      "Etc/GMT-3" = UTC+3
+     *      "Etc/GMT+3" = UTC-3
+     */
+    public static String resolveTimeZoneFromUtcOffsetHours(Integer offset) {
+        if (offset == null) {
+            // Фолбэк — дефолтная таймзона приложения
+            return DEFAULT_TZ;
+        }
+
+        return switch (offset) {
+            case 0  -> "Etc/UTC";                       // UTC±0
+            case 1  -> "Europe/Berlin";                 // UTC+1
+            case 2  -> "Europe/Helsinki";               // UTC+2
+            case 3  -> "Europe/Moscow";                 // UTC+3
+            case 4  -> "Europe/Samara";                 // UTC+4
+            case 5  -> "Asia/Yekaterinburg";            // UTC+5
+            case 6  -> "Asia/Almaty";                   // UTC+6
+            case 7  -> "Asia/Bangkok";                  // UTC+7
+            case 8  -> "Asia/Shanghai";                 // UTC+8
+            case 9  -> "Asia/Tokyo";                    // UTC+9
+            case 10 -> "Australia/Sydney";              // UTC+10
+            case 11 -> "Pacific/Noumea";                // UTC+11
+            case 12 -> "Pacific/Auckland";              // UTC+12
+            case 13 -> "Pacific/Tongatapu";             // UTC+13
+            case 14 -> "Pacific/Kiritimati";            // UTC+14
+            default -> "Europe/Moscow";
+        };
+    }
+
+    public static CalendarListEntry getCalendarListEntryBySummaryOrNull(List<CalendarListEntry> items, String summary) {
+        if (items == null) return null;
+        for (CalendarListEntry entry : items) {
+            if (summary.equals(entry.getSummary())) {
+                return entry;
+            }
+        }
+        return null;
     }
 }
