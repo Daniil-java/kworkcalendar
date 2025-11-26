@@ -76,7 +76,14 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
     }
 
     public void sendDefMessage(Long telegramId) {
-        assistantTelegramBot.sendReturnedMessage(telegramId, MSG);
+        UserNotificationSettings settings = userNotificationSettingsService
+                .getOrCreate(telegramId);
+        assistantTelegramBot.sendReturnedMessage(
+                telegramId,
+                getDailyMessageSettings(settings),
+                buildTimeKeyboard(settings),
+                null
+        );
     }
 
     private void processCallback(Update update, TelegramUser telegramUser) {

@@ -88,7 +88,7 @@ public class AssistantGetCalendarUpdateHandler implements UpdateHandler {
         StringBuilder sb = new StringBuilder();
 
         sb
-                .append("Календарь:").append("\n")
+                .append("Календарь: ")
                 .append(calendar.getSummary()).append("\n")
                 .append("Часовой пояс: ").append(calendar.getTimeZone());
 

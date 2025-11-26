@@ -84,7 +84,7 @@ public class AssistantSettingsUpdateHandler implements UpdateHandler {
         String tzData = Command.ASSISTANT_TZ.getCommandText();
         String dailyNotifyData = Command.ASSISTANT_DAILY_TIME.getCommandText();
 
-        builder.row(TelegramKeyboard.button("Таймзона", tzData));
+        builder.row(TelegramKeyboard.button("Часовой пояс", tzData));
         builder.row(TelegramKeyboard.button("Ежедневные уведомления", dailyNotifyData));
         builder.row("Закрыть", Command.ASSISTANT_CLOSE.getCommandText());
 
