@@ -11,7 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -159,9 +161,18 @@ public class ActionKnotService {
 
 
     public ActionKnot getActionKnotOrNull(String message, String tz) {
+         // например: "Europe/Moscow"
+        ZoneId userZone = ZoneId.of(tz);
+        ZonedDateTime nowForGpt = ZonedDateTime.now(userZone);
+
+        // "сегодня" в таймзоне пользователя
+        String todayInUserZone = nowForGpt.toLocalDate().toString();
+        // время обращения к GPT в той же таймзоне
+        String nowForGptStr = nowForGpt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
         String aiResponse = aiService.fetchResponse(
                 components.getAiKey(),
-                String.format(AI_REQUEST, message, OffsetDateTime.now(), tz, OffsetDateTime.now()));
+                String.format(AI_REQUEST, message, todayInUserZone, tz, nowForGptStr));
         aiResponse = extractResponse(aiResponse);
         aiMessageLogService.saveLog(message, aiResponse);
         try {
