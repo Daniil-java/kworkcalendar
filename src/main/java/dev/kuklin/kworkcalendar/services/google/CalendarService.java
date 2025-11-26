@@ -173,6 +173,16 @@ public class CalendarService {
         return sb.toString();
     }
 
+    public com.google.api.services.calendar.model.Calendar getCalendarByTelegramId(Long telegramId) throws TokenRefreshException, IOException {
+        CalendarContext context = getCalendarContext(telegramId);
+        com.google.api.services.calendar.model.Calendar existing =
+                context.getCalendar()
+                        .calendars()
+                        .get(context.getCalendarId())
+                        .execute();
+        return existing;
+    }
+
     private boolean checkCalendarExist(CalendarContext context) {
         try {
             String calendarId = context.getCalendarId();
