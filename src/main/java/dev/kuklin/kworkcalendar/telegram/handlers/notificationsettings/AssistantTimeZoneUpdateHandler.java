@@ -29,17 +29,13 @@ import java.util.List;
 public class AssistantTimeZoneUpdateHandler implements UpdateHandler {
 
     private final AssistantTelegramBot assistantTelegramBot;
-    private final UserMessagesLogService userMessagesLogService; //TODO
+    private final UserMessagesLogService userMessagesLogService;
     private final CalendarService calendarService;
     private final UserNotificationSettingsService userNotificationSettingsService;
 
     private static final String CMD = Command.ASSISTANT_TZ.getCommandText();
-    private static final String MSG = """
-                "Выбери свой часовой пояс (формат UTC+N):"
-            """;
-    private static final String TZ_MSG = """
-                Часовой пояс установлен:\nUTC+
-            """;
+    private static final String MSG = "Выбери свой часовой пояс (формат UTC+N): ";
+    private static final String TZ_MSG = "Часовой пояс установлен:\nUTC+";
     private static final String TZ_ERROR_MSG = """
                 Не получилось определить часовой пояс! Попробуйте повторить действие позже!
             """;
@@ -54,16 +50,24 @@ public class AssistantTimeZoneUpdateHandler implements UpdateHandler {
     public void handle(Update update, TelegramUser telegramUser) {
         //Если пришло сообщение - то отправляем новое сообщение
         if (update.hasMessage()) processMessage(update, telegramUser);
-        //Если пришел колбэк, то значит надо отредактировать сообщение
-        //Также отвечает за установки таймзоны в БД
+            //Если пришел колбэк, то значит надо отредактировать сообщение
+            //Также отвечает за установки таймзоны в БД
         else if (update.hasCallbackQuery()) processCallback(update, telegramUser);
     }
 
     private void processMessage(Update update, TelegramUser telegramUser) {
         Long chatId = update.getMessage().getChatId();
         assistantTelegramBot.sendChatActionTyping(chatId);
+        userMessagesLogService.createLog(telegramUser, update.getMessage().getText());
 
-        assistantTelegramBot.sendReturnedMessage(chatId, MSG, buildTimezoneKeyboard(), null);
+        UserNotificationSettings settings = userNotificationSettingsService.getOrCreate(telegramUser.getTelegramId());
+
+        assistantTelegramBot.sendReturnedMessage(chatId, getTZSettings(settings), buildTimezoneKeyboard(), null);
+    }
+
+    public void sendDefTzMessage(Long telegramId) {
+        UserNotificationSettings settings = userNotificationSettingsService.getOrCreate(telegramId);
+        assistantTelegramBot.sendReturnedMessage(telegramId, getTZSettings(settings), buildTimezoneKeyboard(), null);
     }
 
     private void processCallback(Update update, TelegramUser telegramUser) {
@@ -73,12 +77,16 @@ public class AssistantTimeZoneUpdateHandler implements UpdateHandler {
         Integer messageId = callbackQuery.getMessage().getMessageId();
         String callbackData = callbackQuery.getData();
 
+        userMessagesLogService.createLog(telegramUser, callbackData);
+
         String[] parts = callbackData.split(TelegramBot.DEFAULT_DELIMETER);
         //Если в колбэк-данных нет ничего, кроме комманды - то
         // возвращаем измененное сообщение
         if (parts.length == 1) {
+            UserNotificationSettings settings = userNotificationSettingsService
+                    .getOrCreate(telegramUser.getTelegramId());
             assistantTelegramBot.sendEditMessage(
-                    chatId, MSG, messageId, buildTimezoneKeyboard());
+                    chatId, getTZSettings(settings), messageId, buildTimezoneKeyboard());
             return;
         }
         if (parts.length < 2 || !CMD.equals(parts[0])) return;
@@ -126,6 +134,22 @@ public class AssistantTimeZoneUpdateHandler implements UpdateHandler {
         }
     }
 
+    private String getTZSettings(UserNotificationSettings settings) {
+        StringBuilder sb = new StringBuilder();
+
+        String tz = "UTC+3";
+        if (settings.getUtcOffsetHours() != null) {
+            tz = "UTC+" + settings.getUtcOffsetHours();
+        }
+
+        sb
+                .append("Текущий часовой пояс: ").append(tz).append("\n")
+                .append(MSG)
+        ;
+
+        return sb.toString();
+    }
+
     /**
      * Строим клавиатуру с UTC+0 ... UTC+14, по 3 кнопки в строке.
      * callbackData: "/timezone <offset>"
@@ -145,6 +169,7 @@ public class AssistantTimeZoneUpdateHandler implements UpdateHandler {
                 row = new ArrayList<>();
             }
         }
+        builder.row("Закрыть", Command.ASSISTANT_CLOSE.getCommandText());
 
         return builder.build();
     }

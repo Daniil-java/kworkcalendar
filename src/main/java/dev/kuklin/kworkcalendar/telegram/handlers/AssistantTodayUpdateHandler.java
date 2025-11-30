@@ -47,6 +47,7 @@ public class AssistantTodayUpdateHandler implements UpdateHandler {
         try {
             List<Event> events = calendarService.getTodayEvents(telegramUser.getTelegramId());
             response = getTodayEventsString(events);
+            assistantTelegramBot.sendReturnedMessage(chatId, response);
         } catch (IOException e) {
             log.error(response, e);
         } catch (TokenRefreshException e) {
@@ -58,10 +59,12 @@ public class AssistantTodayUpdateHandler implements UpdateHandler {
 
     private String getTodayEventsString(List<Event> events) {
         StringBuilder sb = new StringBuilder();
-        sb.append("На сегодня запланировано: ");
+        sb.append("На сегодня запланировано: ").append("\n").append("───────").append("\n");
+        int i = 1;
         for (Event event: events) {
-            sb.append("\n───────\n");
-            sb.append(CalendarEventUpdateHandler.getResponseEventString(event));
+            sb.append("" + i + ". ").append(CalendarEventUpdateHandler.getResponseEventString(event));
+            i++;
+            sb.append("\n");
         }
 
         return sb.append("\n").toString();

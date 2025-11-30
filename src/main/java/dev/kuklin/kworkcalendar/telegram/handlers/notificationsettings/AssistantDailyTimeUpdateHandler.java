@@ -1,10 +1,12 @@
 package dev.kuklin.kworkcalendar.telegram.handlers.notificationsettings;
 
 import dev.kuklin.kworkcalendar.entities.TelegramUser;
+import dev.kuklin.kworkcalendar.entities.UserNotificationSettings;
 import dev.kuklin.kworkcalendar.library.tgmodels.TelegramBot;
 import dev.kuklin.kworkcalendar.library.tgmodels.UpdateHandler;
 import dev.kuklin.kworkcalendar.library.tgutils.Command;
 import dev.kuklin.kworkcalendar.library.tgutils.TelegramKeyboard;
+import dev.kuklin.kworkcalendar.services.UserMessagesLogService;
 import dev.kuklin.kworkcalendar.services.UserNotificationSettingsService;
 import dev.kuklin.kworkcalendar.telegram.AssistantTelegramBot;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +28,11 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
 
     private final AssistantTelegramBot assistantTelegramBot;
     private final UserNotificationSettingsService userNotificationSettingsService;
+    private final UserMessagesLogService userMessagesLogService;
 
     private static final String CMD = Command.ASSISTANT_DAILY_TIME.getCommandText();
 
-    private static final String MSG = "Выбери время, во сколько присылать утреннее уведомление:";
+    private static final String MSG = "Выбери время ежедневного уведомления:";
     private static final String TIME_SET_MSG = "Время ежедневного уведомления установлено: ";
     private static final String ERROR_MSG = "Не получилось определить время, попробуй ещё раз.";
 
@@ -48,10 +51,37 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
         Long chatId = update.getMessage().getChatId();
         assistantTelegramBot.sendChatActionTyping(chatId);
 
+        userMessagesLogService.createLog(telegramUser, update.getMessage().getText());
+        UserNotificationSettings settings = userNotificationSettingsService
+                .getOrCreate(telegramUser.getTelegramId());
+
         assistantTelegramBot.sendReturnedMessage(
                 chatId,
-                MSG,
-                buildTimeKeyboard(),
+                getDailyMessageSettings(settings),
+                buildTimeKeyboard(settings),
+                null
+        );
+    }
+
+    private String getDailyMessageSettings(UserNotificationSettings settings) {
+        StringBuilder sb = new StringBuilder();
+
+        sb
+                .append("Время уведомления: ").append(settings.getDailyTime()).append("\n")
+                .append("Статус: ").append(settings.isDailyEnabled() ? "включены" : "выключены")
+                .append("\n\n").append(MSG)
+        ;
+
+        return sb.toString();
+    }
+
+    public void sendDefMessage(Long telegramId) {
+        UserNotificationSettings settings = userNotificationSettingsService
+                .getOrCreate(telegramId);
+        assistantTelegramBot.sendReturnedMessage(
+                telegramId,
+                getDailyMessageSettings(settings),
+                buildTimeKeyboard(settings),
                 null
         );
     }
@@ -62,15 +92,19 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
         Integer messageId = callbackQuery.getMessage().getMessageId();
         String callbackData = callbackQuery.getData();
 
+        userMessagesLogService.createLog(telegramUser, callbackData);
+        UserNotificationSettings settings = userNotificationSettingsService
+                .getOrCreate(telegramUser.getTelegramId());
+
         String[] parts = callbackData.split(TelegramBot.DEFAULT_DELIMETER);
 
         // Если пришёл только командный префикс — просто перерисуем клавиатуру
         if (parts.length == 1) {
             assistantTelegramBot.sendEditMessage(
                     chatId,
-                    MSG,
+                    getDailyMessageSettings(settings),
                     messageId,
-                    buildTimeKeyboard()
+                    buildTimeKeyboard(settings)
             );
             return;
         }
@@ -80,11 +114,27 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
             return;
         }
 
-        String timePart = parts[1];
+        String part = parts[1];
+
+        if (part.equals("true") || part.equals("false")) {
+            settings = userNotificationSettingsService.updateDailyEnabled(
+                    telegramUser.getTelegramId(),
+                    !settings.isDailyEnabled()
+            );
+
+            // Обновляем исходное сообщение и убираем клавиатуру
+            assistantTelegramBot.sendEditMessage(
+                    chatId,
+                    getDailyMessageSettings(settings),
+                    messageId,
+                    buildTimeKeyboard(settings)
+            );
+            return;
+        }
 
         try {
             // Парсим "HH:mm" в LocalTime
-            LocalTime time = LocalTime.parse(timePart);
+            LocalTime time = LocalTime.parse(part);
 
             // Сохраняем время утреннего уведомления
             userNotificationSettingsService.updateDailyTime(
@@ -92,7 +142,7 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
                     time
             );
 
-            String text = TIME_SET_MSG + timePart;
+            String text = TIME_SET_MSG + part;
 
             // Обновляем исходное сообщение и убираем клавиатуру
             assistantTelegramBot.sendEditMessage(
@@ -114,7 +164,7 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
      * Строим клавиатуру с временем от 00:00 до 23:30, шаг 30 минут.
      * callbackData: "<CMD><DELIM>HH:mm"
      */
-    private InlineKeyboardMarkup buildTimeKeyboard() {
+    private InlineKeyboardMarkup buildTimeKeyboard(UserNotificationSettings settings) {
         TelegramKeyboard.TelegramKeyboardBuilder builder = TelegramKeyboard.builder();
         List<InlineKeyboardButton> row = new ArrayList<>();
 
@@ -139,6 +189,11 @@ public class AssistantDailyTimeUpdateHandler implements UpdateHandler {
             builder.row(row);
         }
 
+        String callbackData = CMD + TelegramBot.DEFAULT_DELIMETER + settings.isDailyEnabled();
+        String text = settings.isDailyEnabled() ? "Выключить" : "Включить";
+        builder.row(TelegramKeyboard.button(text, callbackData));
+
+        builder.row("Закрыть", Command.ASSISTANT_CLOSE.getCommandText());
         return builder.build();
     }
 

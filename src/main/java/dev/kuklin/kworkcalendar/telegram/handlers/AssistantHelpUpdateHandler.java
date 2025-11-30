@@ -29,7 +29,8 @@ public class AssistantHelpUpdateHandler implements UpdateHandler {
                     <b>КОММАНДЫ:</b>
                     /auth - авторизация
                     /auth_status - узнать статус авторизации
-                    /choosecalendar - выбор календаря         
+                    /choosecalendar - выбор календаря
+                    /settings - настройки часового пояса и ежедневных напоминаний         
                     """;
     @Override
     public void handle(Update update, TelegramUser telegramUser) {

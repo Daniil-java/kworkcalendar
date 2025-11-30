@@ -166,10 +166,22 @@ public class CalendarService {
         StringBuilder sb = new StringBuilder();
 
         sb
+                .append("Календарь:").append("\n")
                 .append(existing.getSummary()).append("\n")
-                .append("TIMEZONE: ").append(existing.getTimeZone());
+                .append("Таймзона: ").append(existing.getTimeZone());
 
         return sb.toString();
+    }
+
+    public com.google.api.services.calendar.model.Calendar getCalendarByTelegramIdOrNull(Long telegramId) throws TokenRefreshException, IOException {
+        CalendarContext context = getCalendarContext(telegramId);
+        if (context.getCalendarId() == null) return null;
+        com.google.api.services.calendar.model.Calendar existing =
+                context.getCalendar()
+                        .calendars()
+                        .get(context.getCalendarId())
+                        .execute();
+        return existing;
     }
 
     private boolean checkCalendarExist(CalendarContext context) {
@@ -551,7 +563,6 @@ public class CalendarService {
         try {
             com.google.api.services.calendar.model.Calendar calendar =
                     calendarService.calendars().get(calendarId).execute();
-
             return calendar != null;
         } catch (IOException e) {
             return false;

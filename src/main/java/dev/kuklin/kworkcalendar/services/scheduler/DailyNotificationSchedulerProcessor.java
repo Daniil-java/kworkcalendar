@@ -1,5 +1,6 @@
 package dev.kuklin.kworkcalendar.services.scheduler;
 
+import com.google.api.services.calendar.model.Calendar;
 import com.google.api.services.calendar.model.Event;
 import dev.kuklin.kworkcalendar.entities.UserNotificationSettings;
 import dev.kuklin.kworkcalendar.library.ScheduleProcessor;
@@ -11,8 +12,12 @@ import dev.kuklin.kworkcalendar.telegram.handlers.CalendarEventUpdateHandler;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.util.List;
 
@@ -102,9 +107,12 @@ public class DailyNotificationSchedulerProcessor implements ScheduleProcessor {
 
         try {
             List<Event> events = calendarService.getTodayEvents(telegramId);
+            Calendar calendar = calendarService.getCalendarByTelegramIdOrNull(telegramId);
             telegramBot.sendReturnedMessage(
                     telegramId,
-                    getTodayEventsString(events)
+                    getTodayEventsString(events),
+                    buildKeyboard(calendar.getId()),
+                    null
             );
         } catch (IOException e) {
             telegramBot.sendReturnedMessage(
@@ -126,12 +134,29 @@ public class DailyNotificationSchedulerProcessor implements ScheduleProcessor {
                 telegramId, nowTime, dailyTime, diff);
     }
 
+    private InlineKeyboardMarkup buildKeyboard(String calendarId) {
+        String calendarUrl = "https://calendar.google.com/calendar/u/0/r?cid="
+                + URLEncoder.encode(calendarId, StandardCharsets.UTF_8);
+
+        InlineKeyboardButton openCalendarButton = InlineKeyboardButton.builder()
+                .text("Открыть календарь")
+                .url(calendarUrl)
+                .build();
+
+        List<InlineKeyboardButton> row = List.of(openCalendarButton);
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row))
+                .build();
+    }
+
     private String getTodayEventsString(List<Event> events) {
         StringBuilder sb = new StringBuilder();
-        sb.append("На сегодня запланировано: ");
+        sb.append("На сегодня запланировано: ").append("\n").append("───────").append("\n");
+        int i = 1;
         for (Event event: events) {
-            sb.append("\n───────\n");
-            sb.append(CalendarEventUpdateHandler.getResponseEventString(event));
+            sb.append("" + i + ". ").append(CalendarEventUpdateHandler.getResponseEventString(event));
+            i++;
+            sb.append("\n");
         }
 
         return sb.append("\n").toString();

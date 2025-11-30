@@ -1,34 +1,47 @@
 package dev.kuklin.kworkcalendar.telegram.handlers.notificationsettings;
 
+import com.google.api.services.calendar.model.Calendar;
 import dev.kuklin.kworkcalendar.entities.TelegramUser;
 import dev.kuklin.kworkcalendar.library.tgmodels.UpdateHandler;
 import dev.kuklin.kworkcalendar.library.tgutils.Command;
 import dev.kuklin.kworkcalendar.models.TokenRefreshException;
+import dev.kuklin.kworkcalendar.services.UserMessagesLogService;
 import dev.kuklin.kworkcalendar.services.google.CalendarService;
 import dev.kuklin.kworkcalendar.telegram.AssistantTelegramBot;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class AssistantGetCalendarUpdateHandler implements UpdateHandler {
     private final AssistantTelegramBot assistantTelegramBot;
     private final CalendarService calendarService;
+    private final UserMessagesLogService userMessagesLogService;
     private static final String TOKEN_ERROR_MSG = """
                 Проверьте статус вашей авторизации!
             """;
     private static final String GOOGLE_ERROR_MSG = """
                 Ошибка соединения с Google! Попробуйте повторить действие позже!
             """;
+    private static final String NULL_CALENDAR_MSG = """
+            Вам нужно авторизоваться или поставить календарь вручную! Введите команду /start!
+            """;
+
     @Override
     public void handle(Update update, TelegramUser telegramUser) {
         Long chatId = update.getMessage() != null
                 ? update.getMessage().getChatId()
                 : update.getCallbackQuery().getMessage().getChatId();
+        assistantTelegramBot.sendChatActionTyping(chatId);
         try {
             if (update.hasMessage()) processMessage(update, telegramUser);
             else if (update.hasCallbackQuery()) processCallback(update, telegramUser);
@@ -44,7 +57,16 @@ public class AssistantGetCalendarUpdateHandler implements UpdateHandler {
         Long chatId = update.getMessage().getChatId();
         assistantTelegramBot.sendChatActionTyping(chatId);
 
-        assistantTelegramBot.sendReturnedMessage(chatId, calendarService.getCalendarSettingsString(telegramUser.getTelegramId()));
+        userMessagesLogService.createLog(telegramUser, update.getMessage().getText());
+        Calendar calendar = calendarService.getCalendarByTelegramIdOrNull(telegramUser.getTelegramId());
+        if (calendar == null) {
+            assistantTelegramBot.sendReturnedMessage(
+                    chatId, NULL_CALENDAR_MSG);
+            return;
+        }
+        assistantTelegramBot.sendReturnedMessage(
+                chatId, getCalendarString(calendar),
+                buildKeyboard(calendar.getId()), null);
     }
 
     private void processCallback(Update update, TelegramUser telegramUser) throws TokenRefreshException, IOException {
@@ -53,9 +75,39 @@ public class AssistantGetCalendarUpdateHandler implements UpdateHandler {
         Long chatId = callbackQuery.getMessage().getChatId();
         Integer messageId = callbackQuery.getMessage().getMessageId();
 
+        userMessagesLogService.createLog(telegramUser, callbackQuery.getData());
+        Calendar calendar = calendarService.getCalendarByTelegramIdOrNull(telegramUser.getTelegramId());
         assistantTelegramBot.sendEditMessage(
-                chatId, calendarService.getCalendarSettingsString(telegramUser.getTelegramId()),
-                messageId, null);
+                chatId, getCalendarString(calendar),
+                messageId, buildKeyboard(calendar.getId()));
+    }
+
+    private String getCalendarString(Calendar calendar) {
+
+
+        StringBuilder sb = new StringBuilder();
+
+        sb
+                .append("Календарь: ")
+                .append(calendar.getSummary()).append("\n")
+                .append("Часовой пояс: ").append(calendar.getTimeZone());
+
+        return sb.toString();
+    }
+
+    private InlineKeyboardMarkup buildKeyboard(String calendarId) {
+        String calendarUrl = "https://calendar.google.com/calendar/u/0/r?cid="
+                + URLEncoder.encode(calendarId, StandardCharsets.UTF_8);
+
+        InlineKeyboardButton openCalendarButton = InlineKeyboardButton.builder()
+                .text("Открыть календарь")
+                .url(calendarUrl)
+                .build();
+
+        List<InlineKeyboardButton> row = List.of(openCalendarButton);
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row))
+                .build();
     }
 
     @Override
